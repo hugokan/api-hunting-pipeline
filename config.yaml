@@ -5,17 +5,12 @@ modes:
     delay_ms: [300, 800]
     threads: 1
     allow:
-      subfinder: true
       httpx: true
       ffuf: true
       nuclei: false
       destructive_methods: false
     ffuf:
       max_words: 200
-      match_codes: [401, 403, 404]
-    nuclei:
-      enabled: false
-    user_agent_profile: "browser_chrome"
 
   normal:
     description: "Balanced bug hunting"
@@ -23,32 +18,10 @@ modes:
     delay_ms: [150, 400]
     threads: 3
     allow:
-      subfinder: true
       httpx: true
       ffuf: true
       nuclei: true
       destructive_methods: false
     ffuf:
       max_words: 800
-      match_codes: [200, 401, 403]
-    nuclei:
-      severity: ["medium", "high"]
-    user_agent_profile: "browser_firefox"
 
-  aggressive:
-    description: "Impact confirmation (high risk)"
-    rate_limit: 3
-    delay_ms: [50, 150]
-    threads: 5
-    allow:
-      subfinder: true
-      httpx: true
-      ffuf: true
-      nuclei: true
-      destructive_methods: true
-    ffuf:
-      max_words: 1500
-      match_codes: [200]
-    nuclei:
-      severity: ["high", "critical"]
-    user_agent_profile: "browser_static"

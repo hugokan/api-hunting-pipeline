@@ -1,13 +1,18 @@
-def run_httpx(ctx, targets):
-    if not ctx.allow("httpx"):
+def run_ffuf(ctx, base_url, wordlist):
+    if not ctx.allow("ffuf"):
         return []
 
+    max_words = ctx.rules["ffuf"]["max_words"]
+    words = wordlist[:max_words]
+
     results = []
-    for t in targets:
+    for w in words:
         results.append({
-            "endpoint": t,
+            "endpoint": f"{base_url}/{w}",
             "method": "GET",
-            "status": 200,
-            "scanner": "httpx"
+            "status": 403,
+            "scanner": "ffuf"
         })
     return results
+
+

@@ -1,14 +1,12 @@
 import streamlit as st
 
-def render_sidebar(mode):
+def render_sidebar(scheduler):
     st.sidebar.title("Execution Phase")
+    st.sidebar.write(f"Current phase: **{scheduler.current_phase.upper()}**")
 
-    st.sidebar.write(f"Current phase: **{mode.upper()}**")
+    approve = False
+    if scheduler.current_phase == "stealth":
+        approve = st.sidebar.checkbox("Allow promotion to NORMAL")
 
-    if mode == "stealth":
-        st.sidebar.info("Low noise reconnaissance")
-    elif mode == "normal":
-        st.sidebar.warning("Access control testing")
-
-    approve = st.sidebar.checkbox("Allow phase promotion")
     return approve
+

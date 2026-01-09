@@ -2,42 +2,90 @@ import streamlit as st
 
 from core.config import load_config
 from core.scheduler import PhaseScheduler
+
 from scanners.httpx import run_httpx
 from scanners.ffuf import run_ffuf
 from scanners.nuclei import run_nuclei
+
 from analyzer.bola import detect_bola
 from analyzer.bfla import detect_bfla
+
 from ui.sidebar import render_sidebar
 
+# --------------------------------------------------
+# INIT
+# --------------------------------------------------
+
+st.set_page_config(page_title="API Hunting Dashboard", layout="wide")
+
 config = load_config()
-scheduler = PhaseScheduler(config)
 
-ctx = scheduler.get_context()
+if "scheduler" not in st.session_state:
+    st.session_state.scheduler = PhaseScheduler(config)
 
-approve_promotion = render_sidebar(ctx.mode)
+if "results" not in st.session_state:
+    st.session_state.results = []
 
-st.title("API Hunting Dashboard")
+if "findings" not in st.session_state:
+    st.session_state.findings = []
 
-targets = ["http://localhost:8888"]
-wordlist = ["users", "admin", "orders"]
+scheduler = st.session_state.scheduler
 
-results = []
-results += run_httpx(ctx, targets)
-results += run_ffuf(ctx, targets[0], wordlist)
+# --------------------------------------------------
+# SIDEBAR
+# --------------------------------------------------
 
-if ctx.allow("nuclei"):
-    results += run_nuclei(ctx, targets[0])
+approve_promotion = render_sidebar(scheduler)
 
-bola = detect_bola(results)
-bfla = detect_bfla(results)
+# --------------------------------------------------
+# MAIN
+# --------------------------------------------------
 
-findings = bola + bfla
+st.title("🛡️ API Hunting Dashboard")
+
+targets = ["https://api.target.com"]
+wordlist = ["users", "admin", "orders", "profile"]
+
+if st.button("▶ Run pipeline"):
+    ctx = scheduler.get_context()
+
+    results = []
+    results += run_httpx(ctx, targets)
+    results += run_ffuf(ctx, targets[0], wordlist)
+
+    if ctx.allow("nuclei"):
+        results += run_nuclei(ctx, targets[0])
+
+    st.session_state.results = results
+
+    bola = detect_bola(results)
+    bfla = detect_bfla(results)
+
+    st.session_state.findings = bola + bfla
+
+# --------------------------------------------------
+# DISPLAY
+# --------------------------------------------------
+
+st.subheader("Scan Results")
+if st.session_state.results:
+    st.json(st.session_state.results)
+else:
+    st.info("No scan results yet")
 
 st.subheader("Findings")
-st.json(findings)
+if st.session_state.findings:
+    st.json(st.session_state.findings)
+else:
+    st.info("No findings detected")
+
+# --------------------------------------------------
+# PHASE PROMOTION
+# --------------------------------------------------
 
 stats = {"403_rate": 0.05, "429_rate": 0.0}
 
-if scheduler.can_promote(stats, findings) and approve_promotion:
+if scheduler.can_promote(stats, st.session_state.findings) and approve_promotion:
     scheduler.promote()
     st.success("Phase promoted to NORMAL")
+

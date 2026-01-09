@@ -9,3 +9,4 @@ def run_nuclei(ctx, target):
         "severity": "high",
         "scanner": "nuclei"
     }]
+
